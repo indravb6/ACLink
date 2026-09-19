@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "name": "server",
+      "path": "server",
+    },
+    {
+      "name": "firmware",
+      "path": "firmware",
+    },
+    {
+      "name": "root",
+      "path": ".",
+    },
+  ],
+  "settings": {},
+}
