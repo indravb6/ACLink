@@ -4,6 +4,6 @@
 
 # Secrets
 firmware/include/config.h
+server/data.json
 
-# OS
-.DS_Store
+node_modules/

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>AC Link</title>
+  <link rel="icon" href="data:image/svg+xml,
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+      <text y='.9em' font-size='90'>❄️</text>
+    </svg>" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const MAX_TEMPERATURE = 25;
+    const MIN_TEMPERATURE = 16;
+    let data = {};
+    function render() {
+      document.querySelector("#current-temperature").textContent = data.currentCondition.temperature === -1 ? "??" : data.currentCondition.temperature;
+      document.querySelector("#on-state").style.display = data.settings.on ? "flex" : "none";
+      document.querySelector("#off-state").style.display = data.settings.on ? "none" : "flex";
+      document.querySelector("#power-button").textContent = data.settings.on ? "Turn Off" : "Turn On";
+      document.querySelector("#target-temperature").textContent = data.settings.targetTemperature === -1 ? "??" : data.settings.targetTemperature;
+      document.querySelector("#increase-temperature").disabled = data.settings.targetTemperature >= MAX_TEMPERATURE;
+      document.querySelector("#decrease-temperature").disabled = data.settings.targetTemperature <= MIN_TEMPERATURE;
+    }
+    function updateData(newData) {
+      data = newData;
+      fetch("/api/state", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newData.settings),
+      }).then(fetchData).catch((error) => {
+        console.error("Error updating data:", error);
+      });
+    }
+    function fetchData() {
+      fetch("/api/state")
+        .then((response) => response.json())
+        .then((json) => {
+          data = json;
+          render();
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
+    }
+    function init() {
+      document.querySelector("#power-button").addEventListener("click", () => {
+        data.settings.on = !data.settings.on;
+        updateData(data);
+      });
+      document.querySelector("#increase-temperature").addEventListener("click", () => {
+        data.settings.targetTemperature += 1;
+        updateData(data);
+      });
+      document.querySelector("#decrease-temperature").addEventListener("click", () => {
+        data.settings.targetTemperature -= 1;
+        updateData(data);
+      });
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+      fetchData();
+      setInterval(fetchData, 1000);
+    });
+  </script>
+</head>
+
+<body class="min-h-screen bg-cover bg-center bg-fixed"
+  style="background-image: url('/bg.jpg'); ">
+  <!-- Background overlay -->
+  <div class="fixed inset-0 bg-slate-950/35"></div>
+
+  <!-- Content -->
+  <main class="relative flex min-h-screen items-center justify-center p-4">
+
+    <div class="w-full max-w-md overflow-hidden rounded-3xl
+             border border-white/30
+             bg-white/70
+             shadow-2xl
+             backdrop-blur-xl">
+
+      <!-- Header -->
+      <header class="flex items-center justify-between px-6 pt-6">
+
+        <div class="flex items-center gap-3">
+
+          <div class="flex h-11 w-11 items-center justify-center
+                   rounded-2xl bg-sky-500/10 text-xl">
+            ❄️
+          </div>
+
+          <div>
+            <h1 class="text-lg font-bold text-slate-900">
+              AC Link
+            </h1>
+
+            <p class="text-xs text-slate-500">
+              Smart AC Controller
+            </p>
+          </div>
+
+        </div>
+
+        <div class="flex items-center gap-2 rounded-full
+                 bg-white/70 px-3 py-1.5
+                 text-xs text-slate-500">
+          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+          Connected
+        </div>
+
+      </header>
+
+
+      <!-- Current Temperature -->
+      <section class="px-6 pb-5 pt-8 text-center">
+
+        <p class="text-sm font-medium text-slate-500">
+          Current temperature
+        </p>
+
+        <div class="mt-1 text-7xl font-bold tracking-tight text-slate-900 mb-2">
+          <span id="current-temperature">??</span>
+          <span class="ml-1 text-3xl font-medium text-slate-400">
+            °C
+          </span>
+        </div>
+
+      </section>
+
+
+      <!-- Power -->
+      <section class="px-6">
+        <div class="flex items-center justify-between gap-4">
+
+          <!-- Status -->
+          <div class="flex items-center gap-3" id="on-state">
+            <div class="flex h-10 w-10 items-center justify-center
+               rounded-full
+               bg-emerald-100
+               text-emerald-600">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"
+                class="h-5 w-5">
+                <path d="M12 2v10" />
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              </svg>
+            </div>
+
+            <div>
+              <p class="text-sm font-semibold text-slate-900">
+                AC is ON
+              </p>
+              <p class="text-xs text-slate-500">
+                Currently cooling
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3" id="off-state">
+            <div class="flex h-10 w-10 items-center justify-center
+             rounded-full
+             bg-slate-100
+             text-slate-500">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"
+                class="h-5 w-5">
+                <path d="M12 2v10" />
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              </svg>
+            </div>
+
+            <div>
+              <p class="text-sm font-semibold text-slate-900">
+                AC is OFF
+              </p>
+              <p class="text-xs text-slate-500">
+                Currently turned off
+              </p>
+            </div>
+          </div>
+
+
+          <!-- Action -->
+          <button class="rounded-xl
+             border border-slate-200
+             bg-white
+             px-4 py-2.5
+             text-sm font-semibold
+             text-slate-700
+             shadow-sm
+             transition
+             hover:border-slate-300
+             hover:bg-slate-50
+             active:scale-[0.97]" id="power-button">
+            Turn Off
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- Target Temperature -->
+      <section class="px-6 pt-4">
+
+        <div class="rounded-2xl
+                 border border-white/50
+                 bg-white/55
+                 p-4">
+
+          <p class="mb-3 text-xs font-medium text-slate-500">
+            Target temperature
+          </p>
+
+          <div class="flex items-center justify-between">
+
+            <button class="flex h-11 w-11 items-center justify-center
+                     rounded-xl
+                     bg-white/80
+                     text-xl text-slate-700
+                     shadow-sm
+                     transition
+                     hover:bg-white
+                     active:scale-95 disabled:opacity-50"
+              id="decrease-temperature">
+              −
+            </button>
+
+            <div class="text-3xl font-bold text-slate-900">
+              <span id="target-temperature">??</span>
+              <span class="ml-1 text-base font-medium text-slate-400">
+                °C
+              </span>
+            </div>
+
+            <button class="flex h-11 w-11 items-center justify-center
+                     rounded-xl
+                     bg-white/80
+                     text-xl text-slate-700
+                     shadow-sm
+                     transition
+                     hover:bg-white
+                     active:scale-95 disabled:opacity-50"
+              id="increase-temperature">
+              +
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- Mode -->
+      <section class="px-6 pt-4">
+
+        <p class="mb-2 text-xs font-medium text-slate-500">
+          Mode
+        </p>
+
+        <div class="grid grid-cols-4 gap-1
+                 rounded-xl
+                 bg-slate-900/5
+                 p-1">
+
+          <label>
+            <input type="radio" name="mode" class="peer sr-only" checked />
+
+            <div class="cursor-pointer rounded-lg
+                     px-2 py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              ❄️ Cool
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="mode" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     px-2 py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              Auto
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="mode" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     px-2 py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              💧 Dry
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="mode" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     px-2 py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              💨 Fan
+            </div>
+          </label>
+
+        </div>
+
+      </section>
+
+
+      <!-- Fan Speed -->
+      <section class="px-6 pt-4">
+
+        <p class="mb-2 text-xs font-medium text-slate-500">
+          Fan speed
+        </p>
+
+        <div class="grid grid-cols-4 gap-1
+                 rounded-xl
+                 bg-slate-900/5
+                 p-1">
+
+          <label>
+            <input type="radio" name="fan" class="peer sr-only" checked />
+
+            <div class="cursor-pointer rounded-lg
+                     py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              Auto
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="fan" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              Low
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="fan" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              Medium
+            </div>
+          </label>
+
+          <label>
+            <input type="radio" name="fan" class="peer sr-only" />
+
+            <div class="cursor-pointer rounded-lg
+                     py-2.5
+                     text-center text-xs font-medium
+                     text-slate-500
+                     transition
+                     peer-checked:bg-white
+                     peer-checked:text-slate-900
+                     peer-checked:shadow-sm">
+              High
+            </div>
+          </label>
+
+        </div>
+
+      </section>
+
+
+      <!-- Secondary Controls -->
+      <section class="grid grid-cols-2 gap-3 px-6 pb-6 pt-4">
+
+        <!-- Swing -->
+        <div>
+
+          <p class="mb-2 text-xs font-medium text-slate-500">
+            Swing
+          </p>
+
+          <div class="grid grid-cols-2 gap-1
+                   rounded-xl
+                   bg-slate-900/5
+                   p-1">
+
+            <label>
+              <input type="radio" name="swing" class="peer sr-only" checked />
+
+              <div class="cursor-pointer rounded-lg
+                       py-2.5
+                       text-center text-xs font-medium
+                       text-slate-500
+                       transition
+                       peer-checked:bg-white
+                       peer-checked:text-slate-900
+                       peer-checked:shadow-sm">
+                Off
+              </div>
+            </label>
+
+            <label>
+              <input type="radio" name="swing" class="peer sr-only" />
+
+              <div class="cursor-pointer rounded-lg
+                       py-2.5
+                       text-center text-xs font-medium
+                       text-slate-500
+                       transition
+                       peer-checked:bg-white
+                       peer-checked:text-slate-900
+                       peer-checked:shadow-sm">
+                On
+              </div>
+            </label>
+
+          </div>
+
+        </div>
+
+
+        <!-- Display -->
+        <div>
+
+          <p class="mb-2 text-xs font-medium text-slate-500">
+            Display
+          </p>
+
+          <div class="grid grid-cols-2 gap-1
+                   rounded-xl
+                   bg-slate-900/5
+                   p-1">
+
+            <label>
+              <input type="radio" name="display" class="peer sr-only" checked />
+
+              <div class="cursor-pointer rounded-lg
+                       py-2.5
+                       text-center text-xs font-medium
+                       text-slate-500
+                       transition
+                       peer-checked:bg-white
+                       peer-checked:text-slate-900
+                       peer-checked:shadow-sm">
+                On
+              </div>
+            </label>
+
+            <label>
+              <input type="radio" name="display" class="peer sr-only" />
+
+              <div class="cursor-pointer rounded-lg
+                       py-2.5
+                       text-center text-xs font-medium
+                       text-slate-500
+                       transition
+                       peer-checked:bg-white
+                       peer-checked:text-slate-900
+                       peer-checked:shadow-sm">
+                Off
+              </div>
+            </label>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+</body>
+
+</html>
