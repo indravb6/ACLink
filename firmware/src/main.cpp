@@ -7,8 +7,13 @@
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <ir_Kelvinator.h>
+#include <DHT.h>
 
 const uint16_t IR_SEND_PIN = 15;
+#define DHT_PIN 16
+#define DHT_TYPE DHT22
+
+DHT dht(DHT_PIN, DHT_TYPE);
 
 IRKelvinatorAC ac(IR_SEND_PIN);
 
@@ -34,6 +39,50 @@ void connectWiFi()
   Serial.println(WiFi.localIP());
 }
 
+void updateTemp()
+{
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (isnan(temperature) || isnan(humidity))
+  {
+    Serial.println("Failed to read DHT22");
+    return;
+  }
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature, 1);
+  Serial.println(" °C");
+
+  Serial.print("Humidity: ");
+  Serial.print(humidity, 1);
+  Serial.println(" %");
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    HTTPClient http;
+
+    String url = String(API_URL) + "/" + String(temperature, 1) + "/" + String(humidity, 1);
+
+    Serial.print("POST ");
+    Serial.println(url);
+
+    http.begin(url);
+
+    int httpCode = http.POST("");
+
+    Serial.print("HTTP status: ");
+    Serial.println(httpCode);
+
+    if (httpCode > 0)
+    {
+      Serial.println(http.getString());
+    }
+
+    http.end();
+  }
+}
+
 void updateACState()
 {
   if (WiFi.status() != WL_CONNECTED)
@@ -49,7 +98,7 @@ void updateACState()
 
   HTTPClient http;
 
-  if (!http.begin(client, API_URL))
+  if (!http.begin(client, String(API_URL) + "/state"))
   {
     Serial.println("HTTP begin failed");
     return;
@@ -173,12 +222,15 @@ void setup()
   Serial.begin(115200);
 
   ac.begin();
+  dht.begin();
 
   connectWiFi();
+  delay(2000);
 }
 
 void loop()
 {
+  updateTemp();
   updateACState();
 
   if (settings["id"] == eventId)

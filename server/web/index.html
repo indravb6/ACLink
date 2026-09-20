@@ -73,6 +73,11 @@
         swingIcon.src =
           `/icons/swing-${data.settings.swing}.svg`;
       }
+
+      document.querySelector("#current-humidity").textContent =
+        data.currentCondition.humidity === -1
+          ? "??"
+          : data.currentCondition.humidity;
     }
 
 
@@ -289,8 +294,8 @@
           Current temperature
         </p>
 
-        <div class="mt-1 mb-2 text-7xl font-bold
-                 tracking-tight text-slate-900">
+        <div class="mt-1 text-7xl font-bold
+              tracking-tight text-slate-900">
 
           <span id="current-temperature">
             ??
@@ -298,6 +303,31 @@
 
           <span class="ml-1 text-3xl font-medium text-slate-400">
             °C
+          </span>
+
+        </div>
+
+        <!-- Humidity -->
+        <div class="mt-1 flex items-center justify-center gap-1.5
+              text-sm text-slate-500">
+
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2"
+            class="h-4 w-4 text-sky-500">
+
+            <path
+              d="M12 2.5C12 2.5 5.5 10 5.5 15.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5Z" />
+
+          </svg>
+
+          <span id="current-humidity">
+            ??
+          </span>
+
+          <span>%</span>
+
+          <span class="text-slate-400">
+            humidity
           </span>
 
         </div>
