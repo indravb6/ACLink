@@ -1,5 +1,9 @@
 # ❄️ ACLink
 
+<div align="center">
+<img src="./sample.png" alt="ACLink" width="600" />
+</div>
+
 ACLink is a smart air conditioner controller that allows an existing AC to be controlled remotely through the internet. It uses an ESP32 as the bridge between the AC and the server, sending infrared commands to control the AC just like a traditional remote control.
 
 The project is designed to eventually support **location-based automation**, allowing the AC to be turned on or off automatically based on the user's location.
