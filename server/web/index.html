@@ -78,6 +78,9 @@
         data.currentCondition.humidity === -1
           ? "??"
           : data.currentCondition.humidity;
+
+      document.querySelector("#current-updated").textContent =
+        new Date(data.currentCondition.timestamp).toLocaleTimeString();
     }
 
 
@@ -330,6 +333,11 @@
             humidity
           </span>
 
+        </div>
+
+        <!-- Last Updated -->
+        <div class="mt-2 text-xs text-slate-400">
+          Updated <span id="current-updated">--</span>
         </div>
 
       </section>

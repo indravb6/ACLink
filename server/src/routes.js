@@ -35,6 +35,7 @@ const setupHTTPServer = () => {
 
     data.currentCondition.temperature = temperature;
     data.currentCondition.humidity = humidity;
+    data.currentCondition.timestamp = new Date().toISOString();
 
     writeDB(data);
 

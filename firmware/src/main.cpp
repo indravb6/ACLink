@@ -8,6 +8,7 @@
 #include <IRsend.h>
 #include <ir_Kelvinator.h>
 #include <DHT.h>
+#include <Preferences.h>
 
 const uint16_t IR_SEND_PIN = 15;
 #define DHT_PIN 16
@@ -19,6 +20,14 @@ IRKelvinatorAC ac(IR_SEND_PIN);
 
 String eventId = "";
 JsonDocument settings;
+
+float lastTempUpdate = 0;
+float lastHumidityUpdate = 0;
+int getTemptRetry = 10;
+Preferences preferences;
+
+WiFiClientSecure secureClient;
+HTTPClient http;
 
 void connectWiFi()
 {
@@ -41,12 +50,28 @@ void connectWiFi()
 
 void updateTemp()
 {
+  if (++getTemptRetry < 5)
+    return;
+
+  getTemptRetry = 0;
+
   float temperature = dht.readTemperature();
   float humidity = dht.readHumidity();
 
   if (isnan(temperature) || isnan(humidity))
   {
     Serial.println("Failed to read DHT22");
+    return;
+  }
+
+  if (abs(temperature - lastTempUpdate) > 0.1 || abs(humidity - lastHumidityUpdate) > 0.1)
+  {
+    lastTempUpdate = temperature;
+    lastHumidityUpdate = humidity;
+  }
+  else
+  {
+    Serial.println("Temperature and humidity unchanged");
     return;
   }
 
@@ -60,26 +85,26 @@ void updateTemp()
 
   if (WiFi.status() == WL_CONNECTED)
   {
-    HTTPClient http;
-
     String url = String(API_URL) + "/temp/" + String(temperature, 1) + "/" + String(humidity, 1);
 
     Serial.print("POST ");
     Serial.println(url);
 
-    http.begin(url);
-
-    int httpCode = http.POST("");
-
-    Serial.print("HTTP status: ");
-    Serial.println(httpCode);
-
-    if (httpCode > 0)
+    if (http.begin(secureClient, url))
     {
-      Serial.println(http.getString());
-    }
 
-    http.end();
+      int httpCode = http.POST("");
+
+      Serial.print("HTTP status: ");
+      Serial.println(httpCode);
+
+      if (httpCode > 0)
+      {
+        Serial.println(http.getString());
+      }
+
+      http.end();
+    }
   }
 }
 
@@ -91,14 +116,7 @@ void updateACState()
     return;
   }
 
-  WiFiClientSecure client;
-
-  // Testing only.
-  client.setInsecure();
-
-  HTTPClient http;
-
-  if (!http.begin(client, String(API_URL) + "/state"))
+  if (!http.begin(secureClient, String(API_URL) + "/state"))
   {
     Serial.println("HTTP begin failed");
     return;
@@ -140,7 +158,7 @@ void updateACState()
 
 void sendCommand()
 {
-  Serial.println("Sending AC ON...");
+  Serial.println("Sending AC command.");
 
   if (settings["on"])
   {
@@ -220,9 +238,14 @@ void sendCommand()
 void setup()
 {
   Serial.begin(115200);
+  preferences.begin("aclink", false);
+
+  eventId = preferences.getString("eventId", "");
 
   ac.begin();
   dht.begin();
+
+  secureClient.setInsecure();
 
   connectWiFi();
   delay(2000);
@@ -233,15 +256,23 @@ void loop()
   updateTemp();
   updateACState();
 
+  if (!settings.containsKey("id"))
+  {
+    Serial.println("Settings not available yet");
+    delay(2000);
+    return;
+  }
+
   if (settings["id"] == eventId)
   {
     Serial.println("No new event");
-    delay(1000);
+    delay(2000);
     return;
   }
 
   eventId = settings["id"].as<String>();
+  preferences.putString("eventId", eventId);
   sendCommand();
 
-  delay(1000);
+  delay(2000);
 }
