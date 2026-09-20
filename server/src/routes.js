@@ -21,7 +21,7 @@ const setupHTTPServer = () => {
     res.json(data);
   });
 
-  app.post("/app/temp/:temperature/:humidity", (req, res) => {
+  app.post("/api/temp/:temperature/:humidity", (req, res) => {
     const temperature = Number(req.params.temperature);
     const humidity = Number(req.params.humidity);
 

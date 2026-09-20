@@ -62,7 +62,7 @@ void updateTemp()
   {
     HTTPClient http;
 
-    String url = String(API_URL) + "/" + String(temperature, 1) + "/" + String(humidity, 1);
+    String url = String(API_URL) + "/temp/" + String(temperature, 1) + "/" + String(humidity, 1);
 
     Serial.print("POST ");
     Serial.println(url);
