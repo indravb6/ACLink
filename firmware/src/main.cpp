@@ -119,6 +119,8 @@ void sendCommand()
     break;
   }
   ac.setTemp(settings["targetTemperature"].as<int>());
+  ac.setTurbo(false);
+  ac.setLight(true);
   switch (settings["fanSpeed"].as<String>().c_str()[0])
   {
   case 'a':
@@ -132,6 +134,10 @@ void sendCommand()
     break;
   case 'h':
     ac.setFan(5);
+    break;
+  case 't':
+    ac.setFan(5);
+    ac.setTurbo(true);
     break;
   default:
     break;
