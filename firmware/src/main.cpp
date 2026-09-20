@@ -8,27 +8,12 @@
 #include <IRsend.h>
 #include <ir_Kelvinator.h>
 
-// =========================
-// IR
-// =========================
-
 const uint16_t IR_SEND_PIN = 15;
 
 IRKelvinatorAC ac(IR_SEND_PIN);
 
-// =========================
-// State
-// =========================
-
-int currentState = -1;
-
-// -1 = belum tahu
-//  0 = OFF
-//  1 = ON
-
-// =========================
-// WiFi
-// =========================
+String eventId = "";
+JsonDocument settings;
 
 void connectWiFi()
 {
@@ -49,23 +34,17 @@ void connectWiFi()
   Serial.println(WiFi.localIP());
 }
 
-// =========================
-// Get API state
-// =========================
-
-int getACState()
+void updateACState()
 {
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("WiFi disconnected");
-
-    return -1;
+    return;
   }
 
   WiFiClientSecure client;
 
   // Testing only.
-  // Later bisa diganti dengan certificate validation.
   client.setInsecure();
 
   HTTPClient http;
@@ -73,8 +52,7 @@ int getACState()
   if (!http.begin(client, API_URL))
   {
     Serial.println("HTTP begin failed");
-
-    return -1;
+    return;
   }
 
   int httpCode = http.GET();
@@ -83,14 +61,11 @@ int getACState()
   {
     Serial.print("HTTP error: ");
     Serial.println(httpCode);
-
     http.end();
-
-    return -1;
+    return;
   }
 
   String response = http.getString();
-
   http.end();
 
   JsonDocument doc;
@@ -98,63 +73,94 @@ int getACState()
   if (error)
   {
     Serial.println("JSON parse failed");
-    return -1;
+    return;
   }
 
   Serial.print("API response: ");
   Serial.println(response);
 
-  if (doc["settings"]["on"])
+  if (doc.containsKey("settings"))
   {
-    return 1;
+    settings = doc["settings"];
   }
-
-  if (!doc["settings"]["on"])
+  else
   {
-    return 0;
+    Serial.println("Invalid API response");
   }
-
-  Serial.println("Invalid API response");
-
-  return -1;
 }
 
-// =========================
-// Send AC ON
-// =========================
-
-void turnACOn()
+void sendCommand()
 {
   Serial.println("Sending AC ON...");
 
-  ac.on();
-  ac.setMode(kKelvinatorCool);
-  ac.setTemp(22);
-  ac.setFan(kKelvinatorFanMax);
-  ac.setLight(true);
+  if (settings["on"])
+  {
+    ac.on();
+  }
+  else
+  {
+    ac.off();
+  }
+  switch (settings["mode"].as<String>().c_str()[0])
+  {
+  case 'c':
+    ac.setMode(kKelvinatorCool);
+    break;
+  case 'f':
+    ac.setMode(kKelvinatorFan);
+    break;
+  case 'h':
+    ac.setMode(kKelvinatorHeat);
+    break;
+  case 'd':
+    ac.setMode(kKelvinatorDry);
+    break;
+  default:
+    break;
+  }
+  ac.setTemp(settings["targetTemperature"].as<int>());
+  switch (settings["fanSpeed"].as<String>().c_str()[0])
+  {
+  case 'a':
+    ac.setFan(kKelvinatorFanAuto);
+    break;
+  case 'm':
+    ac.setFan(3);
+    break;
+  case 'l':
+    ac.setFan(1);
+    break;
+  case 'h':
+    ac.setFan(5);
+    break;
+  default:
+    break;
+  }
+
+  String swing = settings["swing"].as<String>();
+  if (swing.compareTo("1") == 0)
+    ac.setSwingVertical(false, kKelvinatorSwingVHighest);
+  else if (swing.compareTo("2") == 0)
+    ac.setSwingVertical(false, kKelvinatorSwingVUpperMiddle);
+  else if (swing.compareTo("3") == 0)
+    ac.setSwingVertical(false, kKelvinatorSwingVMiddle);
+  else if (swing.compareTo("4") == 0)
+    ac.setSwingVertical(false, kKelvinatorSwingVLowerMiddle);
+  else if (swing.compareTo("5") == 0)
+    ac.setSwingVertical(false, kKelvinatorSwingVLowest);
+  else if (swing.compareTo("1-5") == 0)
+    ac.setSwingVertical(true, kKelvinatorSwingVAuto);
+  else if (swing.compareTo("1-3") == 0)
+    ac.setSwingVertical(true, kKelvinatorSwingVHighAuto);
+  else if (swing.compareTo("2-4") == 0)
+    ac.setSwingVertical(true, kKelvinatorSwingVMiddleAuto);
+  else if (swing.compareTo("3-5") == 0)
+    ac.setSwingVertical(true, kKelvinatorSwingVLowAuto);
 
   ac.send();
 
-  Serial.println("AC ON command sent");
+  Serial.println("AC command sent");
 }
-
-// =========================
-// Send AC OFF
-// =========================
-
-void turnACOff()
-{
-  Serial.println("Sending AC OFF...");
-
-  ac.off();
-  ac.send();
-
-  Serial.println("AC OFF command sent");
-}
-
-// =========================
-// Setup
-// =========================
 
 void setup()
 {
@@ -163,67 +169,21 @@ void setup()
   ac.begin();
 
   connectWiFi();
-
-  Serial.println("Getting initial AC state...");
-
-  int state = getACState();
-
-  if (state != -1)
-  {
-    currentState = state;
-
-    Serial.print("Initial state: ");
-    Serial.println(currentState == 1 ? "ON" : "OFF");
-  }
-  else
-  {
-    Serial.println("Failed to get initial state");
-  }
 }
-
-// =========================
-// Loop
-// =========================
 
 void loop()
 {
+  updateACState();
 
-  int newState = getACState();
-
-  // API request gagal
-  if (newState == -1)
+  if (settings["id"] == eventId)
   {
+    Serial.println("No new event");
     delay(1000);
     return;
   }
 
-  // State berubah
-  if (newState != currentState)
-  {
-
-    Serial.print("State changed: ");
-
-    Serial.print(currentState);
-    Serial.print(" -> ");
-    Serial.println(newState);
-
-    if (newState == 1)
-    {
-      turnACOn();
-    }
-    else
-    {
-      turnACOff();
-    }
-
-    currentState = newState;
-  }
-
-  // State tidak berubah
-  else
-  {
-    Serial.println("No change");
-  }
+  eventId = settings["id"].as<String>();
+  sendCommand();
 
   delay(1000);
 }

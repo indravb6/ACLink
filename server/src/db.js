@@ -25,10 +25,10 @@ const setupDB = () => {
         targetTemperature: 22,
         mode: "cool",
         fanSpeed: "auto",
-        swing: false,
-        display: true,
+        swing: "1-5",
       },
     };
+
     writeDB(initialData);
   }
 };
