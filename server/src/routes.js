@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const { readDB, writeDB } = require("./db");
+const { v4: uuidv4 } = require("uuid");
 const app = express();
 const port = 7000;
 
@@ -15,6 +16,7 @@ const setupHTTPServer = () => {
   app.post("/api/state", (req, res) => {
     const data = readDB();
     data.settings = req.body;
+    data.settings.id = uuidv4();
     writeDB(data);
     res.json(data);
   });

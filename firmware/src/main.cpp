@@ -3,7 +3,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-
+#include <ArduinoJson.h>
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <ir_Kelvinator.h>
@@ -26,17 +26,18 @@ int currentState = -1;
 //  0 = OFF
 //  1 = ON
 
-
 // =========================
 // WiFi
 // =========================
 
-void connectWiFi() {
+void connectWiFi()
+{
   Serial.print("Connecting to WiFi");
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -48,13 +49,14 @@ void connectWiFi() {
   Serial.println(WiFi.localIP());
 }
 
-
 // =========================
 // Get API state
 // =========================
 
-int getACState() {
-  if (WiFi.status() != WL_CONNECTED) {
+int getACState()
+{
+  if (WiFi.status() != WL_CONNECTED)
+  {
     Serial.println("WiFi disconnected");
 
     return -1;
@@ -68,7 +70,8 @@ int getACState() {
 
   HTTPClient http;
 
-  if (!http.begin(client, API_URL)) {
+  if (!http.begin(client, API_URL))
+  {
     Serial.println("HTTP begin failed");
 
     return -1;
@@ -76,7 +79,8 @@ int getACState() {
 
   int httpCode = http.GET();
 
-  if (httpCode != 200) {
+  if (httpCode != 200)
+  {
     Serial.print("HTTP error: ");
     Serial.println(httpCode);
 
@@ -89,16 +93,24 @@ int getACState() {
 
   http.end();
 
-  response.trim();
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, response);
+  if (error)
+  {
+    Serial.println("JSON parse failed");
+    return -1;
+  }
 
   Serial.print("API response: ");
   Serial.println(response);
 
-  if (response == "1") {
+  if (doc["settings"]["on"])
+  {
     return 1;
   }
 
-  if (response == "0") {
+  if (!doc["settings"]["on"])
+  {
     return 0;
   }
 
@@ -107,12 +119,12 @@ int getACState() {
   return -1;
 }
 
-
 // =========================
 // Send AC ON
 // =========================
 
-void turnACOn() {
+void turnACOn()
+{
   Serial.println("Sending AC ON...");
 
   ac.on();
@@ -126,12 +138,12 @@ void turnACOn() {
   Serial.println("AC ON command sent");
 }
 
-
 // =========================
 // Send AC OFF
 // =========================
 
-void turnACOff() {
+void turnACOff()
+{
   Serial.println("Sending AC OFF...");
 
   ac.off();
@@ -140,12 +152,12 @@ void turnACOff() {
   Serial.println("AC OFF command sent");
 }
 
-
 // =========================
 // Setup
 // =========================
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   ac.begin();
@@ -156,33 +168,38 @@ void setup() {
 
   int state = getACState();
 
-  if (state != -1) {
+  if (state != -1)
+  {
     currentState = state;
 
     Serial.print("Initial state: ");
     Serial.println(currentState == 1 ? "ON" : "OFF");
-  } else {
+  }
+  else
+  {
     Serial.println("Failed to get initial state");
   }
 }
-
 
 // =========================
 // Loop
 // =========================
 
-void loop() {
+void loop()
+{
 
   int newState = getACState();
 
   // API request gagal
-  if (newState == -1) {
+  if (newState == -1)
+  {
     delay(1000);
     return;
   }
 
   // State berubah
-  if (newState != currentState) {
+  if (newState != currentState)
+  {
 
     Serial.print("State changed: ");
 
@@ -190,9 +207,12 @@ void loop() {
     Serial.print(" -> ");
     Serial.println(newState);
 
-    if (newState == 1) {
+    if (newState == 1)
+    {
       turnACOn();
-    } else {
+    }
+    else
+    {
       turnACOff();
     }
 
@@ -200,7 +220,8 @@ void loop() {
   }
 
   // State tidak berubah
-  else {
+  else
+  {
     Serial.println("No change");
   }
 

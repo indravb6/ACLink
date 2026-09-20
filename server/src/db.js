@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
 
 const file = path.join(__dirname, "..", "data.json");
 
@@ -19,6 +20,7 @@ const setupDB = () => {
         humidity: -1,
       },
       settings: {
+        id: uuidv4(),
         on: true,
         targetTemperature: 22,
         mode: "cool",
