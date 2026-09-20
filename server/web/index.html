@@ -24,6 +24,18 @@
       document.querySelector("#target-temperature").textContent = data.settings.targetTemperature === -1 ? "??" : data.settings.targetTemperature;
       document.querySelector("#increase-temperature").disabled = data.settings.targetTemperature >= MAX_TEMPERATURE;
       document.querySelector("#decrease-temperature").disabled = data.settings.targetTemperature <= MIN_TEMPERATURE;
+      document.querySelectorAll("input[name='fan']").forEach((input) => {
+        input.checked = input.nextElementSibling.getAttribute("id").trim().toLowerCase() === "fan-" + data.settings.fanSpeed;
+      });
+      document.querySelectorAll("input[name='swing']").forEach((input) => {
+        input.checked = input.nextElementSibling.getAttribute("id").trim().toLowerCase() === "swing-" + (data.settings.swing ? "on" : "off");
+      });
+      document.querySelectorAll("input[name='display']").forEach((input) => {
+        input.checked = input.nextElementSibling.getAttribute("id").trim().toLowerCase() === "display-" + (data.settings.display ? "on" : "off");
+      });
+      document.querySelectorAll("input[name='mode']").forEach((input) => {
+        input.checked = input.nextElementSibling.getAttribute("id").trim().toLowerCase() === "mode-" + data.settings.mode;
+      });
     }
     function updateData(newData) {
       data = newData;
@@ -60,6 +72,30 @@
       document.querySelector("#decrease-temperature").addEventListener("click", () => {
         data.settings.targetTemperature -= 1;
         updateData(data);
+      });
+      document.querySelectorAll("input[name='fan']").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          data.settings.fanSpeed = event.target.nextElementSibling.getAttribute("id").trim().toLowerCase().replace("fan-", "");
+          updateData(data);
+        });
+      });
+      document.querySelectorAll("input[name='swing']").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          data.settings.swing = event.target.nextElementSibling.getAttribute("id").trim().toLowerCase().replace("swing-", "") === "on";
+          updateData(data);
+        });
+      });
+      document.querySelectorAll("input[name='display']").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          data.settings.display = event.target.nextElementSibling.getAttribute("id").trim().toLowerCase().replace("display-", "") === "on";
+          updateData(data);
+        });
+      });
+      document.querySelectorAll("input[name='mode']").forEach((input) => {
+        input.addEventListener("change", (event) => {
+          data.settings.mode = event.target.nextElementSibling.getAttribute("id").trim().toLowerCase().replace("mode-", "");
+          updateData(data);
+        });
       });
     }
     document.addEventListener("DOMContentLoaded", () => {
@@ -278,7 +314,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="mode-cool">
               ❄️ Cool
             </div>
           </label>
@@ -293,7 +329,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="mode-auto">
               Auto
             </div>
           </label>
@@ -308,7 +344,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="mode-dry">
               💧 Dry
             </div>
           </label>
@@ -323,7 +359,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="mode-fan">
               💨 Fan
             </div>
           </label>
@@ -355,7 +391,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="fan-auto">
               Auto
             </div>
           </label>
@@ -370,7 +406,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="fan-low">
               Low
             </div>
           </label>
@@ -385,7 +421,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="fan-medium">
               Medium
             </div>
           </label>
@@ -400,7 +436,7 @@
                      transition
                      peer-checked:bg-white
                      peer-checked:text-slate-900
-                     peer-checked:shadow-sm">
+                     peer-checked:shadow-sm" id="fan-high">
               High
             </div>
           </label>
@@ -435,7 +471,7 @@
                        transition
                        peer-checked:bg-white
                        peer-checked:text-slate-900
-                       peer-checked:shadow-sm">
+                       peer-checked:shadow-sm" id="swing-off">
                 Off
               </div>
             </label>
@@ -450,7 +486,7 @@
                        transition
                        peer-checked:bg-white
                        peer-checked:text-slate-900
-                       peer-checked:shadow-sm">
+                       peer-checked:shadow-sm" id="swing-on">
                 On
               </div>
             </label>
@@ -482,7 +518,7 @@
                        transition
                        peer-checked:bg-white
                        peer-checked:text-slate-900
-                       peer-checked:shadow-sm">
+                       peer-checked:shadow-sm" id="display-on">
                 On
               </div>
             </label>
@@ -497,7 +533,7 @@
                        transition
                        peer-checked:bg-white
                        peer-checked:text-slate-900
-                       peer-checked:shadow-sm">
+                       peer-checked:shadow-sm" id="display-off">
                 Off
               </div>
             </label>
